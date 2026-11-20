@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>لوحة تحكم المهندس — ALKAK ERP Admin</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Cairo', system-ui, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Login Gate -->
+  <div id="adminGate" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-800 to-slate-800 mx-auto flex items-center justify-center font-extrabold text-amber-300 border border-amber-400/30">
+          ERP
+        </div>
+        <h1 class="text-lg font-extrabold text-white pt-1">لوحة المهندس المركزية</h1>
+        <p class="text-xs text-slate-400">إدارة الأجهزة والتراخيص والأعطال — المهندس محمد سليم القاق</p>
+      </div>
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-300">كلمة سر المهندس</label>
+        <input id="gatePass" type="password" placeholder="أدخل كلمة السر..." dir="ltr" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500" />
+      </div>
+      <button id="gateBtn" type="button" class="w-full py-2.5 rounded-xl bg-rose-800 hover:bg-rose-700 text-white font-bold text-sm transition cursor-pointer">
+        دخول إلى لوحة التحكم
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-gradient-to-l from-[#5A1228] to-[#1e3a5f] border-b border-white/10 px-4 py-3 sticky top-0 z-30 shadow-lg">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="font-extrabold text-base sm:text-lg text-white">🔐 إدارة نظام ALKAK ERP (نسخة المهندس)</h2>
+        <p class="text-[11px] text-amber-200">المهندس محمد سليم القاق — تحكم كامل بالشركات والأجهزة والأعطال</p>
+      </div>
+      <button id="refreshAllBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer">
+        🔄 تحديث البيانات
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 space-y-5">
+
+    <!-- Firebase Connection -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+      <h3 class="font-bold text-sm text-amber-300">☁️ رابط قاعدة بيانات Firebase المركزية</h3>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input id="masterFbUrl" type="url" dir="ltr" placeholder="https://your-project-default-rtdb.firebaseio.com" class="flex-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500" />
+        <button id="saveFbBtn" type="button" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer shrink-0">
+          حفظ والاتصال
+        </button>
+      </div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
+        <div class="text-xs text-slate-400">إجمالي الأجهزة</div>
+        <div id="statTotal" class="text-xl font-extrabold text-white mt-1">0</div>
+      </div>
+      <div class="bg-slate-900 border border-emerald-500/30 rounded-xl p-3">
+        <div class="text-xs text-emerald-400">أجهزة مفعّلة</div>
+        <div id="statActive" class="text-xl font-extrabold text-emerald-400 mt-1">0</div>
+      </div>
+      <div class="bg-slate-900 border border-amber-500/30 rounded-xl p-3">
+        <div class="text-xs text-amber-400">بانتظار الموافقة</div>
+        <div id="statPending" class="text-xl font-extrabold text-amber-400 mt-1">0</div>
+      </div>
+      <div class="bg-slate-900 border border-rose-500/30 rounded-xl p-3">
+        <div class="text-xs text-rose-400">سجل الأعطال</div>
+        <div id="statErrors" class="text-xl font-extrabold text-rose-400 mt-1">0</div>
+      </div>
+    </section>
+
+    <!-- Devices & Licenses -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-bold text-sm">📱 الأجهزة والشركات المسجلة</h3>
+        <input id="devSearch" type="text" placeholder="بحث باسم الشركة أو المعرّف..." class="rounded-lg bg-slate-950 border border-slate-700 px-3 py-1 text-xs outline-none" />
+      </div>
+      <div id="devicesContainer" class="p-4 space-y-2.5 text-sm">
+        <p class="text-slate-400 text-xs">أدخل رابط Firebase واضغط «حفظ والاتصال» لعرض الأجهزة.</p>
+      </div>
+    </section>
+
+    <!-- Company Licenses (Room Kill-Switch) -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="font-bold text-sm">🔑 التحكم المباشر بتراخيص السحابة (حسب معرّف الشركة)</h3>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="roomInput" type="text" dir="ltr" placeholder="معرّف الشركة (مثال: company_1)" class="flex-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-xs outline-none" />
+          <button id="roomBlockBtn" type="button" class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer">⛔ إيقاف الشركة</button>
+          <button id="roomApproveBtn" type="button" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer">✅ تفعيل الشركة</button>
+        </div>
+        <div id="licensesContainer" class="space-y-2 text-xs text-slate-300"></div>
+      </div>
+    </section>
+
+    <!-- Error Logs -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-slate-800/80 flex items-center justify-between gap-2">
+        <h3 class="font-bold text-sm">🛠️ سجل الأعطال الواردة من الشركات</h3>
+        <button id="clearLogsBtn" type="button" class="px-3 py-1 rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 text-xs font-bold cursor-pointer">مسح السجل</button>
+      </div>
+      <div id="logsContainer" class="p-4 space-y-2 text-xs max-h-80 overflow-y-auto">
+        <p class="text-slate-400">لا توجد أعطال مسجلة.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-amber-500 text-slate-950 text-xs font-bold shadow-lg opacity-0 pointer-events-none transition-opacity"></div>
+
+  <script>
+    (function () {
+      const PASS = 'Mohamad@0020w7H';
+      const LS_URL = 'ALKAK_ADMIN_FB_URL';
+      let fbUrl = '';
+      let devicesCache = [];
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.remove('opacity-0');
+        el.classList.add('opacity-100');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => {
+          el.classList.remove('opacity-100');
+          el.classList.add('opacity-0');
+        }, 2400);
+      }
+
+      try { fbUrl = localStorage.getItem(LS_URL) || 'https://alkak-erp-default-rtdb.firebaseio.com'; } catch (e) { fbUrl = 'https://alkak-erp-default-rtdb.firebaseio.com'; }
+      document.getElementById('masterFbUrl').value = fbUrl;
+
+      function unlockAdmin() {
+        const val = document.getElementById('gatePass').value;
+        if (val !== PASS) return showToast('كلمة السر غير صحيحة');
+        document.getElementById('adminGate').classList.add('hidden');
+        if (fbUrl) loadAllData();
+      }
+
+      document.getElementById('gateBtn').addEventListener('click', unlockAdmin);
+      document.getElementById('gatePass').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') unlockAdmin();
+      });
+
+      document.getElementById('saveFbBtn').addEventListener('click', () => {
+        const u = document.getElementById('masterFbUrl').value.trim().replace(/\/+$/, '');
+        if (!u.startsWith('https://')) return showToast('أدخل رابط Firebase صحيح يبدأ بـ https://');
+        fbUrl = u;
+        try { localStorage.setItem(LS_URL, fbUrl); } catch (e) {}
+        loadAllData();
+        showToast('تم حفظ الرابط والاتصال ✓');
+      });
+
+      document.getElementById('refreshAllBtn').addEventListener('click', loadAllData);
+
+      async function loadAllData() {
+        if (!fbUrl || !fbUrl.startsWith('https://')) return showToast('أدخل رابط Firebase أولاً');
+        await Promise.all([loadDevices(), loadLicenses(), loadLogs()]);
+      }
+
+      async function loadDevices() {
+        const box = document.getElementById('devicesContainer');
+        try {
+          const res = await fetch(`${fbUrl}/alkak_devices.json`);
+          const data = await res.json();
+          devicesCache = data ? Object.values(data) : [];
+          renderDevices();
+        } catch (e) {
+          box.innerHTML = '<p class="text-rose-400 text-xs">تعذر جلب قائمة الأجهزة.</p>';
+        }
+      }
+
+      function renderDevices() {
+        const q = (document.getElementById('devSearch').value || '').trim().toLowerCase();
+        const filtered = devicesCache.filter(d => !q || (d.deviceId || '').toLowerCase().includes(q) || (d.company || '').toLowerCase().includes(q));
+        document.getElementById('statTotal').textContent = devicesCache.length;
+        document.getElementById('statActive').textContent = devicesCache.filter(d => d.status === 'approved').length;
+        document.getElementById('statPending').textContent = devicesCache.filter(d => d.status !== 'approved' && d.status !== 'blocked').length;
+
+        const box = document.getElementById('devicesContainer');
+        if (!filtered.length) {
+          box.innerHTML = '<p class="text-slate-400 text-xs">لا توجد أجهزة مسجلة.</p>';
+          return;
+        }
+        box.innerHTML = '';
+        filtered.forEach(d => {
+          const badge = d.status === 'approved'
+            ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">مفعّل ✓</span>'
+            : (d.status === 'blocked'
+              ? '<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-bold">موقوف ⛔</span>'
+              : '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-bold">بانتظار التفعيل ⏳</span>');
+
+          const row = document.createElement('div');
+          row.className = 'flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-800/60 border border-slate-700/70';
+          row.innerHTML = `
+            <div>
+              <div class="font-bold text-white flex items-center gap-2"><span dir="ltr">${d.deviceId}</span> ${badge}</div>
+              <div class="text-xs text-slate-400 mt-0.5">الشركة: ${d.company || 'غير محددة'} | أول ظهور: ${(d.firstSeen || '').split('T')[0]}</div>
+            </div>
+          `;
+          const btns = document.createElement('div');
+          btns.className = 'flex items-center gap-1.5';
+
+          const appBtn = document.createElement('button');
+          appBtn.type = 'button';
+          appBtn.className = 'px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer';
+          appBtn.textContent = 'تفعيل';
+          appBtn.addEventListener('click', () => setDeviceStatus(d.deviceId, 'approved'));
+
+          const blkBtn = document.createElement('button');
+          blkBtn.type = 'button';
+          blkBtn.className = 'px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold cursor-pointer';
+          blkBtn.textContent = 'إيقاف';
+          blkBtn.addEventListener('click', () => setDeviceStatus(d.deviceId, 'blocked'));
+
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold cursor-pointer';
+          delBtn.textContent = 'حذف';
+          delBtn.addEventListener('click', () => deleteDevice(d.deviceId));
+
+          btns.append(appBtn, blkBtn, delBtn);
+          row.appendChild(btns);
+          box.appendChild(row);
+        });
+      }
+
+      document.getElementById('devSearch').addEventListener('input', renderDevices);
+
+      async function setDeviceStatus(devId, status) {
+        await fetch(`${fbUrl}/alkak_devices/${devId}.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, updatedAt: Date.now() })
+        });
+        showToast(status === 'approved' ? 'تم تفعيل الجهاز ✓' : 'تم إيقاف الجهاز ⛔');
+        loadDevices();
+      }
+
+      async function deleteDevice(devId) {
+        await fetch(`${fbUrl}/alkak_devices/${devId}.json`, { method: 'DELETE' });
+        showToast('تم حذف الجهاز');
+        loadDevices();
+      }
+
+      async function setRoomLicense(room, active) {
+        const clean = room.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        if (!clean) return showToast('أدخل معرّف الشركة');
+        await fetch(`${fbUrl}/alqaaq_erp_license/${clean}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active, updatedAt: Date.now() })
+        });
+        showToast(active ? 'تم تفعيل سحابة الشركة ✓' : 'تم إيقاف سحابة الشركة ⛔');
+        loadLicenses();
+      }
+
+      document.getElementById('roomBlockBtn').addEventListener('click', () => setRoomLicense(document.getElementById('roomInput').value, false));
+      document.getElementById('roomApproveBtn').addEventListener('click', () => setRoomLicense(document.getElementById('roomInput').value, true));
+
+      async function loadLicenses() {
+        const box = document.getElementById('licensesContainer');
+        try {
+          const res = await fetch(`${fbUrl}/alqaaq_erp_license.json`);
+          const data = await res.json();
+          if (!data) { box.innerHTML = '<p class="text-slate-400">لا توجد تراخيص سحابية مسجلة.</p>'; return; }
+          box.innerHTML = Object.entries(data).map(([k, v]) => `
+            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-800/50 border border-slate-700/60">
+              <span><strong>${k}</strong> — ${v.active ? '✅ مفعّل' : '⛔ موقوف'}</span>
+            </div>
+          `).join('');
+        } catch (e) {}
+      }
+
+      async function loadLogs() {
+        const box = document.getElementById('logsContainer');
+        try {
+          const res = await fetch(`${fbUrl}/alqaaq_erp_logs.json`);
+          const data = await res.json();
+          if (!data) {
+            document.getElementById('statErrors').textContent = '0';
+            box.innerHTML = '<p class="text-slate-400">لا توجد أعطال مسجلة ✓</p>';
+            return;
+          }
+          const allLogs = [];
+          Object.entries(data).forEach(([room, entries]) => {
+            if (entries && typeof entries === 'object') {
+              Object.values(entries).forEach(e => allLogs.push({ room, ...e }));
+            }
+          });
+          allLogs.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+          document.getElementById('statErrors').textContent = allLogs.length;
+          box.innerHTML = allLogs.map(l => `
+            <div class="p-2.5 rounded-lg bg-slate-800/70 border border-rose-500/20">
+              <div class="font-bold text-rose-300">[${l.company || l.room}] — ${l.time || ''}</div>
+              <div class="text-slate-200 mt-0.5" dir="ltr">${l.msg || ''} (${l.src || ''})</div>
+            </div>
+          `).join('') || '<p class="text-slate-400">لا توجد أعطال مسجلة ✓</p>';
+        } catch (e) {
+          box.innerHTML = '<p class="text-rose-400">تعذر جلب سجل الأعطال.</p>';
+        }
+      }
+
+      document.getElementById('clearLogsBtn').addEventListener('click', async () => {
+        if (!fbUrl) return;
+        await fetch(`${fbUrl}/alqaaq_erp_logs.json`, { method: 'DELETE' });
+        showToast('تم مسح سجل الأعطال');
+        loadLogs();
+      });
+    })();
+  </script>
+</body>
+</html>
